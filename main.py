@@ -2,7 +2,7 @@ import cv2
 from icecream import ic
 from detector import Detector
 
-# from servo import Servo
+from servo import Servo
 
 people_detector = Detector()
 
@@ -17,6 +17,18 @@ MIDDLE_CENTER = (WIDTH // 2, HEIGHT // 2) # 画面正中心
 MAX_SAME_PERSON_DELTA = 300  # 标定在多少距离范围以内识别为同一个人
 
 previous_center = None
+
+myservo = Servo("COM7")
+
+if not myservo.status:
+   print("舵机状态异常")
+   exit(0)
+
+def adjust_by_error(error):
+    pass
+
+assert myservo.ping(1),"舵机1状态异常"
+assert myservo.ping(2),"舵机2状态异常"
 
 while ret:
     center = people_detector.detect(frame)
@@ -35,8 +47,9 @@ while ret:
         cv2.line(frame, center, MIDDLE_CENTER, (0, 255, 0), 2)
 
         delta_x = MIDDLE_CENTER[0] - center[0]
-        delta_y = MIDDLE_CENTER[1] - center[1]
-        ic(delta_x,delta_y)
+        # delta_y = MIDDLE_CENTER[1] - center[1]
+        
+        ic(delta_x)
 
     cv2.imshow("win", frame)
     k = cv2.waitKey(10)

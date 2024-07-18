@@ -10,7 +10,7 @@ class Servo:
         except serial.serialutil.SerialException:
             self.status = False  # 串口占用，失败
 
-    def calculate_check_sum(self, id, instruction: int, parameters: list[int]):
+    def __calculate_check_sum(self, id, instruction: int, parameters: list[int]):
         """
         计算校验和
         """
@@ -19,7 +19,9 @@ class Servo:
         ) & 0xFF
         return check_sum
 
-    def uart_command_write(self, id: int, instruction: int, parameters: list[int] = []):
+    def __uart_command_write(
+        self, id: int, instruction: int, parameters: list[int] = []
+    ):
         """
         有效数据长度 = `有效数据长度位`后面`所有位`的数量
         """
@@ -31,15 +33,14 @@ class Servo:
         hex_list.append(instruction)
         hex_list += parameters
 
-        check_sum = self.calculate_check_sum(id, instruction, parameters)
+        check_sum = self.__calculate_check_sum(id, instruction, parameters)
         hex_list.append(check_sum)
 
         bytes_hex = bytes(hex_list)
 
-        print([hex(x) for x in bytes_hex])
         self.ser.write(bytes_hex)
 
-    def uart_read_info(self) -> bytes:
+    def __uart_read_info(self) -> bytes:
         bytes_hex_1 = self.ser.read(4)
         assert len(bytes_hex_1) != 0
         valid_data_length = bytes_hex_1[-1]  # 有效数据长度
@@ -48,13 +49,13 @@ class Servo:
 
         return bytes_hex
 
-    def ping(self, id: int) -> bytes:
+    def ping(self, id: int) -> bool:
         """
         查询工作状态
         """
-        self.uart_command_write(id, 0x01)
+        self.__uart_command_write(id, 0x01)
         try:
-            bytes_hex = self.uart_read_info()
+            bytes_hex = self.__uart_read_info()
         except AssertionError:
             # 这说明没读到信息，工作状态错误
             return False
@@ -75,7 +76,15 @@ class Servo:
             speed >> 8,  # 高位
             speed & 0xFF,  # 低位
         ]
-        self.uart_command_write(id, instruction, parameters)
+        self.__uart_command_write(id, instruction, parameters)
+
+    def get_current_position(self, id) -> int:
+        self.__uart_command_write(id, 0x02, [0x38, 0x02])
+        bytes_hex = self.__uart_read_info()
+        assert bytes_hex[4] == 0, "舵机工作状态异常"
+        position = (bytes_hex[5] << 8) | (bytes_hex[6])
+
+        return position
 
     def __del__(self):
         if self.status and self.ser.is_open:

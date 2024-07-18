@@ -2,8 +2,11 @@ from ultralytics import YOLO
 import numpy as np
 from icecream import ic
 
+
 class Detector:
-    def __init__(self, modelfile: str = "yolov8n.pt", target_cls: int = 0) -> None:
+    def __init__(
+        self, modelfile: str = "./LFS/yolov8n.pt", target_cls: int = 0
+    ) -> None:
         self.model = YOLO(modelfile)  # 模型文件
         self.target_cls = target_cls  # 目标标签
 
