@@ -9,11 +9,6 @@ from servo import Servo
 
 people_detector = Detector(target_cls=39)
 
-
-def calculate(x):
-    return 0.3 * x  # - 5.758
-
-
 cap = cv2.VideoCapture(1)
 
 if cap.isOpened():
@@ -72,11 +67,11 @@ while ret:
             2,
         )
 
-        delta_target = my_pid(delta_x)
+        delta_target_postion = my_pid(delta_x)
 
         cv2.putText(
             frame,
-            f"delta_target:{delta_target}",
+            f"delta_target_postion:{delta_target_postion}",
             (100, 200),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.75,
@@ -85,9 +80,9 @@ while ret:
         )
 
         if abs(delta_x) > 30:
-            target = position - delta_target
-            myservo.revolve(1,int(target),0,1000)
-            position = target
+            target_position = position - delta_target_postion
+            myservo.revolve(1,int(target_position),0,1000)
+            position = target_position
 
     cap1.write(frame)
     cv2.imshow("win", frame)
