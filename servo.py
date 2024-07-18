@@ -36,7 +36,10 @@ class Servo:
         check_sum = self.__calculate_check_sum(id, instruction, parameters)
         hex_list.append(check_sum)
 
-        bytes_hex = bytes(hex_list)
+        try:
+            bytes_hex = bytes(hex_list)
+        except ValueError:
+            ic(hex_list)
 
         self.ser.write(bytes_hex)
 
@@ -66,26 +69,32 @@ class Servo:
         """
         舵机转动
         """
+        position = 1024 if position > 1024 else position
+        position = 0 if position < 0 else position
+
         instruction = 0x03
         parameters = [
             0x2A,  # 目标地址
-            position >> 8,  # 高位
+            (position) >> 8,  # 高位
             position & 0xFF,  # 低位
-            time_gap >> 8,  # 高位
+            (time_gap) >> 8,  # 高位
             time_gap & 0xFF,  # 低位
-            speed >> 8,  # 高位
+            (speed) >> 8,  # 高位
             speed & 0xFF,  # 低位
         ]
         self.__uart_command_write(id, instruction, parameters)
+        bytes_hex = self.__uart_read_info()
 
     def get_current_position(self, id) -> int:
+        """
+        这个函数只能在最开始的时候调用
+        后面调用不会返回参数
+        """
         self.__uart_command_write(id, 0x02, [0x38, 0x02])
         bytes_hex = self.__uart_read_info()
-        assert bytes_hex[4] == 0, "舵机工作状态异常"
+        assert bytes_hex[4] == 0
+        if len(bytes_hex) != 8:
+            return
         position = (bytes_hex[5] << 8) | (bytes_hex[6])
 
         return position
-
-    def __del__(self):
-        if self.status and self.ser.is_open:
-            self.ser.close()
