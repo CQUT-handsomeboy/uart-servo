@@ -19,10 +19,12 @@ class IncreasementalPID:
         self.error = self.target - input
         P = (self.error - self.prev_error) * self.kp
         I = self.error * self.ki
-        D = (self.error - self.prev_error) - (
-            self.prev_error - self.prev_prev_error
+        D = (
+            (self.error - self.prev_error) - (self.prev_error - self.prev_prev_error)
         ) * self.kd
+
         self.prev_prev_error = self.prev_error
+        self.prev_error = self.error
 
         output = P + I + D
 
