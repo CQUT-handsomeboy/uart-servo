@@ -1,8 +1,8 @@
 import cv2
 from icecream import ic
-from detector import YOLODetector, MoveNetDetector
+from detector import YOLODetector
 
-from filter import KalmanFilter
+from filter import *
 
 kf = KalmanFilter()
 
@@ -30,7 +30,6 @@ def pid0(error0):
     # output = kf(output)
 
     # output = 100 * (1 if output > 0 else -1) if abs(output) > 100 else output
-    data.append(output)
 
     prev_error0 = error0
     prev_prev_error0 = prev_prev_error0
@@ -42,31 +41,30 @@ def pid0(error0):
 上方舵机
 """
 
-kp1, ki1, kd1 = 0.008, 0, 0
+kp1, ki1, kd1 = 0.008, 0, 0.2
 
-prev_error1, prev_prev_error1 = 0, 0
+prev_error1 = 0
 
 
 def pid1(error1):
-    global prev_error1, prev_prev_error1
+    global prev_error1
 
     P = error1
-    D = prev_error1 - prev_prev_error1
+    D = kf(error1 - prev_error1) * 4
 
     output = kp1 * P + kd1 * D
-    data.append(output)
+    data.append(D)
 
     prev_error1 = error1
-    prev_prev_error1 = prev_prev_error1
 
     return output
 
 
 from servo import Servo
 
-detector = YOLODetector(target_cls=0)
+detector = YOLODetector(target_cls=0,modelfile="./LFS/yolov8n.pt")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 if cap.isOpened():
     ret, frame = cap.read()
@@ -74,7 +72,7 @@ if cap.isOpened():
 HEIGHT, WIDTH = frame.shape[:2]
 MIDDLE_CENTER = (WIDTH // 2, HEIGHT // 2)  # 画面正中心
 
-myservo = Servo("COM7")
+myservo = Servo("COM10")
 
 if myservo is not None:
     if not myservo.status:
@@ -144,8 +142,8 @@ def show_pid_args(img):
 
 
 cv2.createTrackbar("kP", "win", 0, 1000, on_kp_change)
-cv2.createTrackbar("kI", "win", 0, 1000, on_ki_change)
-cv2.createTrackbar("kD", "win", 0, 1000, on_kd_change)
+cv2.createTrackbar("kI", "win", 0, 3000, on_ki_change)
+cv2.createTrackbar("kD", "win", 0, 3000, on_kd_change)
 
 
 while ret:
@@ -182,7 +180,7 @@ while ret:
             2,
         )
         target_xposition = xposition - delta_target_xpostion
-        myservo.revolve(1, int(target_xposition), 0, 0)
+        myservo.revolve(1, int(target_xposition), 0, 1000)
         xposition = target_xposition
 
         # y
@@ -190,7 +188,7 @@ while ret:
         delta_y = MIDDLE_CENTER[1] - center_y
         delta_y = 0 if abs(delta_y) < 50 else delta_y
 
-        delta_target_ypostion = pid0(delta_y)
+        delta_target_ypostion = pid1(delta_y)
         cv2.putText(
             frame,
             f"delta_y:{delta_y}",
@@ -205,7 +203,7 @@ while ret:
         target_yposition = 600 if target_yposition > 600 else target_yposition
         target_yposition = 350 if target_yposition < 350 else target_yposition
 
-        myservo.revolve(2, int(target_yposition), 0, 0)
+        myservo.revolve(2, int(target_yposition), 0, 1000)
         yposition = target_yposition
 
     else:
