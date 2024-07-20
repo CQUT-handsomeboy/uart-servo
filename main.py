@@ -28,6 +28,7 @@ def pid0(error0):
 
     output = kp0 * P + kd0 * D
 
+    # output = 100 * (1 if output > 0 else -1) if abs(output) > 100 else output
 
     prev_error0 = error0
     prev_prev_error0 = prev_prev_error0
