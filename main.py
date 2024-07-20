@@ -27,7 +27,6 @@ def pid0(error0):
     D = prev_error0 - prev_prev_error0
 
     output = kp0 * P + kd0 * D
-    # output = kf(output)
 
     # output = 100 * (1 if output > 0 else -1) if abs(output) > 100 else output
 
@@ -41,7 +40,7 @@ def pid0(error0):
 上方舵机
 """
 
-kp1, ki1, kd1 = 0.008, 0, 0.2
+kp1, ki1, kd1 = 0.1025, 0.053, 0.034
 
 prev_error1 = 0
 
@@ -50,7 +49,7 @@ def pid1(error1):
     global prev_error1
 
     P = error1
-    D = kf(error1 - prev_error1) * 4
+    D = (error1 - prev_error1)
 
     output = kp1 * P + kd1 * D
     data.append(D)
@@ -62,7 +61,7 @@ def pid1(error1):
 
 from servo import Servo
 
-detector = YOLODetector(target_cls=0,modelfile="./LFS/yolov8n.pt")
+detector = YOLODetector(target_cls=0,modelfile="./LFS/yolov8n-face.pt")
 
 cap = cv2.VideoCapture(1)
 
